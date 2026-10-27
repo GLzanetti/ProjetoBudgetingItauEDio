@@ -61,3 +61,5 @@ src/main/resources/application.yaml
 hs_err_pid*
 replay_pid*
 >>>>>>> d9a12fad0a4e68975cb201f86e0771202a624f8a
+
+.env

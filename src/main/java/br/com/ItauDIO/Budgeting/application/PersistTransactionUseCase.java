@@ -4,7 +4,9 @@ import br.com.ItauDIO.Budgeting.application.input.PersistTransactionInput;
 import br.com.ItauDIO.Budgeting.application.output.TransactionOutput;
 import br.com.ItauDIO.Budgeting.domain.Transaction;
 import br.com.ItauDIO.Budgeting.domain.TransactionRepository;
+import org.springframework.stereotype.Service;
 
+@Service
 public class PersistTransactionUseCase {
     private final TransactionRepository transactionRepository;
 
