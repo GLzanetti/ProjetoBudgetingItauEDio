@@ -1,0 +1,28 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+
+  application:
+    name: Budgeting
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  ai:
+    google:
+      genai:
+        api-key: ${GOOGLE_API_KEY}
+        chat:
+          options:
+            model: gemini-3.5-flash
+            temperature: 0.3
+
+app:
+  speech:
+    model: gemini-3.8-flash-lite-tts
+    voice: Kore

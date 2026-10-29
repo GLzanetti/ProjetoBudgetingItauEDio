@@ -20,7 +20,6 @@ public class GeminiAudioTranscriber implements AudioTranscriber {
     private final GoogleGenAiChatModel genAiChatModel;
 
     public GeminiAudioTranscriber(GoogleGenAiChatModel genAiChatModel) {
-        System.out.println("Modelo padrão do bean: " + genAiChatModel.getOptions().getModel());
         this.genAiChatModel = genAiChatModel;
     }
 

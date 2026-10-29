@@ -33,8 +33,6 @@ build/
 ### VS Code ###
 .vscode/
 
-#Application.yaml
-src/main/resources/application.yaml
 =======
 # Compiled class file
 *.class

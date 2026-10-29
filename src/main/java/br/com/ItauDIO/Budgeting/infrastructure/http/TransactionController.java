@@ -2,6 +2,7 @@ package br.com.ItauDIO.Budgeting.infrastructure.http;
 
 import br.com.ItauDIO.Budgeting.application.ListTransactionsByCategoryUseCase;
 import br.com.ItauDIO.Budgeting.application.PersistTransactionUseCase;
+import br.com.ItauDIO.Budgeting.application.SpeechSynthesizerUseCase;
 import br.com.ItauDIO.Budgeting.application.TranscribeAudioUseCase;
 import br.com.ItauDIO.Budgeting.domain.Category;
 import br.com.ItauDIO.Budgeting.infrastructure.http.request.TransactionRequest;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,12 +28,14 @@ public class TransactionController {
     private final ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase;
     private final TranscribeAudioUseCase transcribeAudioUseCase;
     private final ChatClient chatClient;
+    private final SpeechSynthesizerUseCase speechSynthesizerUseCase;
 
     public TransactionController(PersistTransactionUseCase persistTransactionUseCase,
                                  ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase,
                                  TranscribeAudioUseCase transcribeAudioUseCase,
                                  @Value("classpath:/prompts/system-message.st")Resource systemPrompt,
-                                 ChatClient.Builder chatClientBuilder) throws IOException {
+                                 ChatClient.Builder chatClientBuilder,
+                                 SpeechSynthesizerUseCase speechSynthesizerUseCase) throws IOException {
         this.persistTransactionUseCase = persistTransactionUseCase;
         this.listTransactionsByCategoryUseCase = listTransactionsByCategoryUseCase;
         this.transcribeAudioUseCase = transcribeAudioUseCase;
@@ -39,6 +43,7 @@ public class TransactionController {
                 .defaultSystem(systemPrompt.getContentAsString(Charset.defaultCharset()))
                 .defaultTools(persistTransactionUseCase, listTransactionsByCategoryUseCase)
                 .build();
+        this.speechSynthesizerUseCase = speechSynthesizerUseCase;
     }
 
     @PostMapping
@@ -53,12 +58,16 @@ public class TransactionController {
         return listTransactionsByCategoryUseCase.execute(category).stream().map(TransactionResponse::from).toList();
     }
 
-    @PostMapping(value = "/ai", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public String transcribe(@RequestParam("file") MultipartFile file) {
+    @PostMapping(value = "/ai", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = "audio/wav")
+    public ResponseEntity<byte[]> transcribe(@RequestParam("file") MultipartFile file) {
         String text = transcribeAudioUseCase.transcribe(file.getResource());
 
         var result = chatClient.prompt().user(text).call().content();
 
-        return result;
+        byte[] audio = speechSynthesizerUseCase.synthesize(result);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("audio/wav"))
+                .body(audio);
     }
 }
