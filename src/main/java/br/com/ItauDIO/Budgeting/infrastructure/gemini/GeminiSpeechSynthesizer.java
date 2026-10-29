@@ -4,7 +4,6 @@ import br.com.ItauDIO.Budgeting.application.output.SpeechOutput;
 import br.com.ItauDIO.Budgeting.application.port.SpeechSynthesizer;
 import com.google.genai.Client;
 import com.google.genai.types.*;
-import org.springframework.ai.audio.tts.TextToSpeechModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 

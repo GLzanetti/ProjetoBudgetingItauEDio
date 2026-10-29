@@ -1,7 +1,6 @@
 package br.com.ItauDIO.Budgeting.application;
 
 import br.com.ItauDIO.Budgeting.infrastructure.gemini.GeminiSpeechSynthesizer;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 @Service
