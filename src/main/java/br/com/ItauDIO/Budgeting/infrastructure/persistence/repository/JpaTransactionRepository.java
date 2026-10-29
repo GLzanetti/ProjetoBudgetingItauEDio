@@ -1,9 +1,9 @@
-package br.com.ItauDIO.Budgeting.infraestructure.persistence.repository;
+package br.com.ItauDIO.Budgeting.infrastructure.persistence.repository;
 
 import br.com.ItauDIO.Budgeting.domain.Category;
 import br.com.ItauDIO.Budgeting.domain.Transaction;
 import br.com.ItauDIO.Budgeting.domain.TransactionRepository;
-import br.com.ItauDIO.Budgeting.infraestructure.persistence.entity.TransactionEntity;
+import br.com.ItauDIO.Budgeting.infrastructure.persistence.entity.TransactionEntity;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

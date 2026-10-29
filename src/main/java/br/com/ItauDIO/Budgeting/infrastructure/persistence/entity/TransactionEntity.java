@@ -1,4 +1,4 @@
-package br.com.ItauDIO.Budgeting.infraestructure.persistence.entity;
+package br.com.ItauDIO.Budgeting.infrastructure.persistence.entity;
 
 import br.com.ItauDIO.Budgeting.domain.Category;
 import br.com.ItauDIO.Budgeting.domain.Transaction;

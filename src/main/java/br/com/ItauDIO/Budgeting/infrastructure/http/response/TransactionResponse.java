@@ -1,4 +1,4 @@
-package br.com.ItauDIO.Budgeting.infraestructure.http.response;
+package br.com.ItauDIO.Budgeting.infrastructure.http.response;
 
 import br.com.ItauDIO.Budgeting.application.output.TransactionOutput;
 

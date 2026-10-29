@@ -1,4 +1,4 @@
-package br.com.ItauDIO.Budgeting.infraestructure.http.request;
+package br.com.ItauDIO.Budgeting.infrastructure.http.request;
 
 import br.com.ItauDIO.Budgeting.application.input.PersistTransactionInput;
 import br.com.ItauDIO.Budgeting.domain.Category;

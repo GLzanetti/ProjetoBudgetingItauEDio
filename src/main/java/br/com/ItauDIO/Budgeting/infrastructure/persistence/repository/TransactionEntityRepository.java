@@ -1,7 +1,7 @@
-package br.com.ItauDIO.Budgeting.infraestructure.persistence.repository;
+package br.com.ItauDIO.Budgeting.infrastructure.persistence.repository;
 
 import br.com.ItauDIO.Budgeting.domain.Category;
-import br.com.ItauDIO.Budgeting.infraestructure.persistence.entity.TransactionEntity;
+import br.com.ItauDIO.Budgeting.infrastructure.persistence.entity.TransactionEntity;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;
