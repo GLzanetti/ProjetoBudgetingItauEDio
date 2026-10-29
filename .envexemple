@@ -1,0 +1,6 @@
+MYSQL_ROOT_PASSWORD={your-password}
+MYSQL_DATABASE=transaction
+MYSQL_USER={your-user}
+MYSQL_PASSWORD={your-password}
+
+GOOGLE_API_KEY={your-Google-API-Key}
