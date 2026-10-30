@@ -138,7 +138,7 @@ Siga os passos abaixo para configurar e executar a aplicação em seu ambiente l
 
 ### 1. Clonar o Repositório
 ```bash
-git clone https://github.com/GLzanetti/ProjetoDIOeIta-.git
+git clone https://github.com/GLzanetti/ProjetoBudgetingItauEDio.git
 cd ProjetoDIOeIta-
 ```
 
