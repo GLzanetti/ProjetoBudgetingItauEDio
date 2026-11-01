@@ -54,6 +54,18 @@ class TransactionTest {
     }
 
     @Test
+    @DisplayName("Deve garantir que duas transações instanciadas geram ids diferentes")
+    void deveGerarIdsDiferentesParaTransacoesDistintas() {
+        Transaction tx1 = new Transaction("Primeira Compra", 1000L, Category.GROCERIES);
+        Transaction tx2 = new Transaction("Segunda Compra", 2000L, Category.AUTO);
+
+        assertNotNull(tx1.getId());
+        assertNotNull(tx2.getId());
+        assertNotEquals(tx1.getId(), tx2.getId());
+        assertNotEquals(tx1.getId().id(), tx2.getId().id());
+    }
+
+    @Test
     @DisplayName("Deve aceitar valores limítrofes e negativos documentando o comportamento atual sem validação")
     void deveAceitarValoresLimitrofesSemValidacao() {
         Transaction zeroAmountTx = new Transaction("Item Grátis", 0L, Category.AUTO);

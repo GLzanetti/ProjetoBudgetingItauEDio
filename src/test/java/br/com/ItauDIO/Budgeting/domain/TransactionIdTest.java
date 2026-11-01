@@ -18,6 +18,16 @@ class TransactionIdTest {
     }
 
     @Test
+    @DisplayName("Deve gerar UUIDs distintos para instâncias criadas sem argumentos")
+    void deveGerarUUIDsDistintosParaInstanciasCriadasSemArgumentos() {
+        TransactionId id1 = new TransactionId();
+        TransactionId id2 = new TransactionId();
+
+        assertNotEquals(id1, id2);
+        assertNotEquals(id1.id(), id2.id());
+    }
+
+    @Test
     @DisplayName("Deve preservar o UUID fornecido no construtor e manter igualdade de record")
     void devePreservarUUIDFornecido() {
         UUID uuid = UUID.randomUUID();
@@ -27,6 +37,10 @@ class TransactionIdTest {
         assertEquals(uuid, id1.id());
         assertEquals(id1, id2);
         assertEquals(id1.hashCode(), id2.hashCode());
+
+        TransactionId id3 = new TransactionId(UUID.randomUUID());
+        assertNotEquals(id1, id3);
+        assertNotEquals(id1.id(), id3.id());
     }
 }
 
