@@ -139,7 +139,7 @@ Siga os passos abaixo para configurar e executar a aplicação em seu ambiente l
 ### 1. Clonar o Repositório
 ```bash
 git clone https://github.com/GLzanetti/ProjetoBudgetingItauEDio.git
-cd ProjetoDIOeIta-
+cd ProjetoBudgetingItauEDio
 ```
 
 ### 2. Iniciar o Banco de Dados com Docker
@@ -182,7 +182,7 @@ Abaixo estão mapeadas as principais rotas públicas expostas pelo sistema:
 
 | Método | Endpoint | Parâmetros / Content-Type | Descrição |
 |--------|----------|---------------------------|-----------|
-| `POST` | `/transactions` | `application/json`<br>`{ "description": "Supermercado", "category": "GROCERIES", "amount": 120 }` | Cadastra manualmente uma nova transação financeira. |
+| `POST` | `/transactions` | `application/json`<br>`{ "description": "Supermercado", "category": "GROCERIES", "amount": 12000 }` | Cadastra manualmente uma nova transação financeira (valor `amount` informado em centavos: ex. `12000` = R$ 120,00; retorno com `amount` formatado em `BigDecimal`). |
 | `GET` | `/transactions/{category}` | `Path`: `category` (`GROCERIES`, `PHARMA`, `AUTO`) | Retorna todas as transações cadastradas na categoria informada. |
 | `POST` | `/transactions/ai` | `multipart/form-data`<br>Parâmetro: `file` (arquivo de áudio) | Recebe comando de voz, transcreve com Gemini, executa Tool Calling e retorna áudio falado (`audio/wav`). |
 
