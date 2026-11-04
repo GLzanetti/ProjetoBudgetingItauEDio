@@ -72,7 +72,7 @@ class JpaTransactionRepositoryTest {
 
         when(transactionEntityRepository.findAllByCategory(category)).thenReturn(List.of(entity1, entity2));
 
-        List<Transaction> result = jpaTransactionRepository.findALlByCategory(category);
+        List<Transaction> result = jpaTransactionRepository.findAllByCategory(category);
 
         assertAll(
                 () -> assertEquals(2, result.size()),
@@ -96,7 +96,7 @@ class JpaTransactionRepositoryTest {
                 .thenThrow(new RuntimeException("Falha ao consultar banco H2"));
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> jpaTransactionRepository.findALlByCategory(Category.GROCERIES));
+                () -> jpaTransactionRepository.findAllByCategory(Category.GROCERIES));
 
         assertEquals("Falha ao consultar banco H2", exception.getMessage());
         verify(transactionEntityRepository, times(1)).findAllByCategory(Category.GROCERIES);

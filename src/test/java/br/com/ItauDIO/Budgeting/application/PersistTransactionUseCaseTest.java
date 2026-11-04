@@ -13,6 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -48,7 +50,7 @@ class PersistTransactionUseCaseTest {
                 () -> assertEquals(savedTransaction.getId().id().toString(), output.id()),
                 () -> assertEquals("Mercado", output.description()),
                 () -> assertEquals("GROCERIES", output.category()),
-                () -> assertEquals(5000.0, output.value())
+                () -> assertEquals(new BigDecimal("50.00"), output.value())
         );
     }
 
