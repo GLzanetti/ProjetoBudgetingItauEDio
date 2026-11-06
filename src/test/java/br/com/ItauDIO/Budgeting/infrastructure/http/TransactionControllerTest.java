@@ -1,9 +1,6 @@
 package br.com.ItauDIO.Budgeting.infrastructure.http;
 
-import br.com.ItauDIO.Budgeting.application.ListTransactionsByCategoryUseCase;
-import br.com.ItauDIO.Budgeting.application.PersistTransactionUseCase;
-import br.com.ItauDIO.Budgeting.application.SpeechSynthesizerUseCase;
-import br.com.ItauDIO.Budgeting.application.TranscribeAudioUseCase;
+import br.com.ItauDIO.Budgeting.application.*;
 import br.com.ItauDIO.Budgeting.application.input.PersistTransactionInput;
 import br.com.ItauDIO.Budgeting.application.output.TransactionOutput;
 import br.com.ItauDIO.Budgeting.domain.Category;
@@ -52,6 +49,9 @@ class TransactionControllerTest {
     private TranscribeAudioUseCase transcribeAudioUseCase;
 
     @Mock
+    private SumTransactionsByCategoryUseCase sumTransactionsByCategoryUseCase;
+
+    @Mock
     private SpeechSynthesizerUseCase speechSynthesizerUseCase;
 
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
@@ -72,6 +72,7 @@ class TransactionControllerTest {
                 persistTransactionUseCase,
                 listTransactionsByCategoryUseCase,
                 transcribeAudioUseCase,
+                sumTransactionsByCategoryUseCase,
                 systemPromptResource,
                 chatClientBuilder,
                 speechSynthesizerUseCase
