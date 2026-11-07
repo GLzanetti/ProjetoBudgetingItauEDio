@@ -1,9 +1,6 @@
 package br.com.ItauDIO.Budgeting.infrastructure.http;
 
-import br.com.ItauDIO.Budgeting.application.ListTransactionsByCategoryUseCase;
-import br.com.ItauDIO.Budgeting.application.PersistTransactionUseCase;
-import br.com.ItauDIO.Budgeting.application.SpeechSynthesizerUseCase;
-import br.com.ItauDIO.Budgeting.application.TranscribeAudioUseCase;
+import br.com.ItauDIO.Budgeting.application.*;
 import br.com.ItauDIO.Budgeting.domain.Category;
 import br.com.ItauDIO.Budgeting.infrastructure.http.request.TransactionRequest;
 import br.com.ItauDIO.Budgeting.infrastructure.http.response.TransactionResponse;
@@ -33,6 +30,7 @@ public class TransactionController {
     public TransactionController(PersistTransactionUseCase persistTransactionUseCase,
                                  ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase,
                                  TranscribeAudioUseCase transcribeAudioUseCase,
+                                 SumTransactionsByCategoryUseCase sumTransactionsByCategoryUseCase,
                                  @Value("classpath:/prompts/system-message.st")Resource systemPrompt,
                                  ChatClient.Builder chatClientBuilder,
                                  SpeechSynthesizerUseCase speechSynthesizerUseCase) throws IOException {
@@ -41,7 +39,7 @@ public class TransactionController {
         this.transcribeAudioUseCase = transcribeAudioUseCase;
         this.chatClient = chatClientBuilder
                 .defaultSystem(systemPrompt.getContentAsString(Charset.defaultCharset()))
-                .defaultTools(persistTransactionUseCase, listTransactionsByCategoryUseCase)
+                .defaultTools(persistTransactionUseCase, listTransactionsByCategoryUseCase, sumTransactionsByCategoryUseCase)
                 .build();
         this.speechSynthesizerUseCase = speechSynthesizerUseCase;
     }
