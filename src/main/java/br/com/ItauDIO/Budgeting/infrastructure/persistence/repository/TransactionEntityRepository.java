@@ -12,6 +12,6 @@ import java.util.UUID;
 public interface TransactionEntityRepository extends CrudRepository<TransactionEntity, UUID> {
     List<TransactionEntity> findAllByCategory(Category category);
 
-    @Query("select sum(t.amount) from transaction_entity t where t.category = :category")
+    @Query("select sum(t.amount) from TransactionEntity t where t.category = :category")
     Long sumAmountByCategory(@Param("category") Category category);
 }
