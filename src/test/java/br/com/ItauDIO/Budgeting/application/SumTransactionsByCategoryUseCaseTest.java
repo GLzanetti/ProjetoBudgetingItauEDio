@@ -69,3 +69,4 @@ class SumTransactionsByCategoryUseCaseTest {
         verify(transactionRepository, times(1)).sumAmountByCategory(Category.AUTO);
     }
 }
+
