@@ -101,5 +101,29 @@ class JpaTransactionRepositoryTest {
         assertEquals("Falha ao consultar banco H2", exception.getMessage());
         verify(transactionEntityRepository, times(1)).findAllByCategory(Category.GROCERIES);
     }
+
+    @Test
+    @DisplayName("Deve somar valor por categoria com sucesso delegando ao repositório JPA")
+    void deveSomarValorPorCategoriaComSucesso() {
+        Category category = Category.GROCERIES;
+        when(transactionEntityRepository.sumAmountByCategory(category)).thenReturn(7500L);
+
+        long total = jpaTransactionRepository.sumAmountByCategory(category);
+
+        assertEquals(7500L, total);
+        verify(transactionEntityRepository, times(1)).sumAmountByCategory(category);
+    }
+
+    @Test
+    @DisplayName("Deve retornar zero quando o repositório JPA retornar null para a soma da categoria")
+    void deveRetornarZeroQuandoSumAmountByCategoryRetornarNull() {
+        Category category = Category.PHARMA;
+        when(transactionEntityRepository.sumAmountByCategory(category)).thenReturn(null);
+
+        long total = jpaTransactionRepository.sumAmountByCategory(category);
+
+        assertEquals(0L, total);
+        verify(transactionEntityRepository, times(1)).sumAmountByCategory(category);
+    }
 }
 
