@@ -2,7 +2,7 @@
 
 > **Projeto:** Budgeting  
 > **Prioridade:** 🔴 Alta — Tópico 1  
-> **Escopo:** Testes unitários das camadas Domain, Application, Infrastructure (Persistence) e HTTP Controller.
+> **Escopo:** Testes unitários das camadas Domain, Application, Infrastructure (Persistence) e HTTP Controller, incluindo a nova tool `SumTransactionsByCategoryUseCase`.
 
 ---
 
@@ -21,10 +21,10 @@
 
 ## ⚙️ Configuração Inicial: Cobertura com JaCoCo
 
-Adicionar o plugin **JaCoCo** ao [pom.xml](file:///c:/Users/gabri/IdeaProjects/Budgeting/pom.xml).
+Adicionar o plugin **JaCoCo** ao [pom.xml](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/pom.xml).
 
 > [!NOTE]
-> **Decisão sobre Meta de Cobertura:** Nesta etapa, o JaCoCo será configurado para **apenas medição e geração de relatório** (`prepare-agent` e `report`), sem impor `<check>` com quebra de build (`haltOnFailure`). O objetivo é estabelecer a métrica base e permitir inspeção visual em `target/site/jacoco/index.html` (com meta indicativa referencial de ≥ 80% em `domain` e `application`).
+> **Decisão sobre Meta de Cobertura:** O JaCoCo está configurado para **apenas medição e geração de relatório** (`prepare-agent` e `report`), sem impor `<check>` com quebra de build (`haltOnFailure`). O objetivo é estabelecer a métrica base e permitir inspeção visual em `target/site/jacoco/index.html` (com meta indicativa referencial de ≥ 80% em `domain` e `application`).
 
 ```xml
 <plugin>
@@ -57,8 +57,8 @@ Cada etapa é independente, compilável e commitável isoladamente.
 ```mermaid
 flowchart TD
     E1["Etapa 1: JaCoCo + Domínio\n(TransactionTest, TransactionIdTest)"]
-    E2["Etapa 2: Use Cases\n(Persist, ListByCategory, Transcribe, Speech)"]
-    E3["Etapa 3: Adapters de Persistência\n(TransactionEntityTest, JpaTransactionRepositoryTest)"]
+    E2["Etapa 2: Use Cases\n(Persist, ListByCategory, Transcribe, Speech, SumByCategory)"]
+    E3["Etapa 3: Adapters de Persistência\n(TransactionEntityTest, JpaTransactionRepositoryTest com sumAmountByCategory)"]
     E4["Etapa 4: HTTP Controller via MockMvc Standalone\n(TransactionControllerTest)"]
 
     E1 --> E2 --> E3 --> E4
@@ -71,15 +71,17 @@ flowchart TD
 **Foco:** Testes lógicos puros sem mocks para entidades e Value Objects.  
 **Commit sugerido:** `test(domain): add unit tests for Transaction and TransactionId and configure JaCoCo`
 
-### 1.1 `TransactionIdTest` (2 testes)
+### 1.1 `TransactionIdTest` (3 testes)
 1. **`deveGerarUUIDValidoPorPadrao`:** instancia com construtor padrão e valida que `id()` não é nulo.
-2. **`devePreservarUUIDFornecido`:** instancia com UUID conhecido e valida preservação de valor e igualdade de record (`equals`/`hashCode`).
+2. **`deveGerarUUIDsDistintosEmInstanciasDiferentes`:** valida unicidade de identificadores criados consecutivamente.
+3. **`devePreservarUUIDFornecido`:** instancia com UUID conhecido e valida preservação de valor e igualdade de record (`equals`/`hashCode`).
 
-### 1.2 `TransactionTest` (4 testes)
-3. **`deveCriarTransacaoComCamposCorretos`:** instancia via construtor `(description, amount, category)` e checa todos os getters e geração automática do `TransactionId`.
-4. **`devePermitirInstanciacaoComIdExistente`:** valida construtor completo com `TransactionId` pré-definido.
-5. **`devePermitirCriacaoComTodasAsCategorias`:** `@ParameterizedTest` com `@EnumSource(Category.class)` cobrindo `GROCERIES`, `PHARMA` e `AUTO`.
-6. **`deveAceitarValoresLimítrofesSemValidacao`:** documenta comportamento atual sem validação (permite `amount = 0` e valores negativos, para tratamento posterior no plano de validação).
+### 1.2 `TransactionTest` (5 testes)
+4. **`deveCriarTransacaoComCamposCorretos`:** instancia via construtor `(description, amount, category)` e checa todos os getters e geração automática do `TransactionId`.
+5. **`devePermitirInstanciacaoComIdExistente`:** valida construtor completo com `TransactionId` pré-definido.
+6. **`devePermitirCriacaoComTodasAsCategorias`:** `@ParameterizedTest` com `@EnumSource(Category.class)` cobrindo `GROCERIES`, `PHARMA` e `AUTO`.
+7. **`deveGerarIdsUnicosParaInstanciasDiferentes`:** garante que cada instância gerada sem ID possui um identificador único.
+8. **`deveAceitarValoresLimítrofesSemValidacao`:** documenta comportamento atual sem validação (permite `amount = 0` e valores negativos, para tratamento posterior no plano de validação).
 
 ---
 
@@ -89,71 +91,98 @@ flowchart TD
 **Commit sugerido:** `test(application): add unit tests for all transaction and ai use cases`
 
 ### 2.1 `PersistTransactionUseCaseTest` (2 testes)
-7. **Sucesso — `devePersistirTransacaoERetornarOutputMapeado`:**
+9. **Sucesso — `devePersistirTransacaoERetornarOutputMapeado`:**
    - Mock: `transactionRepository.save(any(Transaction.class))` retornando transação mockada.
    - Ação: chama `execute(new PersistTransactionInput("Mercado", Category.GROCERIES, 5000L))`.
-   - Asserções agrupadas: captura a transação salva (`ArgumentCaptor`), verifica se os dados bateram com o input e valida todos os campos do `TransactionOutput` (`id`, `description`, `category="GROCERIES"`, `value=50.0`).
-8. **Erro — `devePropagarExcecaoQuandoRepositorioFalhar`:**
+   - Asserções agrupadas: captura a transação salva (`ArgumentCaptor`), verifica se os dados bateram com o input e valida todos os campos do `TransactionOutput` (`id`, `description`, `category="GROCERIES"`, `amount=BigDecimal.valueOf(50.00)`).
+10. **Erro — `devePropagarExcecaoQuandoRepositorioFalhar`:**
    - Mock: `transactionRepository.save(...)` lança `RuntimeException`.
    - Ação: `assertThrows` garantindo que a exceção é propagada.
 
 ### 2.2 `ListTransactionsByCategoryUseCaseTest` (3 testes)
-9. **Sucesso — `deveRetornarListaDeTransacoesMapeadas`:**
-   - Mock: `transactionRepository.findALlByCategory(Category.PHARMA)` (*nome real*) retornando 2 transações.
+11. **Sucesso — `deveRetornarListaDeTransacoesMapeadas`:**
+   - Mock: `transactionRepository.findAllByCategory(Category.PHARMA)` retornando 2 transações.
    - Asserções agrupadas: valida tamanho da lista e todos os campos dos `TransactionOutput`.
-10. **Sucesso (Vazio) — `deveRetornarListaVaziaQuandoNaoHouverRegistros`:**
-    - Mock: `findALlByCategory` retorna `List.of()`. Valida retorno vazio sem falhas.
-11. **Erro — `devePropagarExcecaoQuandoConsultaFalhar`:**
-    - Mock: `findALlByCategory` lança exceção em falha. Valida propagação via `assertThrows`.
+12. **Sucesso (Vazio) — `deveRetornarListaVaziaQuandoNaoHouverRegistros`:**
+    - Mock: `findAllByCategory` retorna `List.of()`. Valida retorno vazio sem falhas.
+13. **Erro — `devePropagarExcecaoQuandoConsultaFalhar`:**
+    - Mock: `findAllByCategory` lança exceção em falha. Valida propagação via `assertThrows`.
 
 ### 2.3 `TranscribeAudioUseCaseTest` (2 testes)
-12. **Sucesso — `deveTranscreverAudioComSucesso`:**
+14. **Sucesso — `deveTranscreverAudioComSucesso`:**
     - Mock: `GeminiAudioTranscriber.transcribe(any(Resource.class))` retornando `"Gastei 20 reais"`.
     - Asserção: texto retornado confere com o retornado pelo adaptador.
-13. **Erro — `devePropagarExcecaoQuandoFalharTranscricao`:**
+15. **Erro — `devePropagarExcecaoQuandoFalharTranscricao`:**
     - Mock: `transcribe(...)` lança `IllegalArgumentException`. Valida lançamento com `assertThrows`.
 
 ### 2.4 `SpeechSynthesizerUseCaseTest` (2 testes)
-14. **Sucesso — `deveSintetizarTextoEmAudio`:**
+16. **Sucesso — `deveSintetizarTextoEmAudio`:**
     - Mock: `GeminiSpeechSynthesizer.synthesize("Texto")` retornando `new SpeechOutput(new byte[]{1, 2, 3}, "audio/wav")`.
     - Asserção: valida array de bytes retornado usando mandatoriamente `assertArrayEquals(new byte[]{1, 2, 3}, result)`.
-15. **Erro — `devePropagarExcecaoQuandoGeminiFalharSintese`:**
+17. **Erro — `devePropagarExcecaoQuandoGeminiFalharSintese`:**
     - Mock: `synthesize(...)` lança `IllegalArgumentException` ("O gemini não devolveu áudio.").
     - Asserção: `assertThrows` validando o erro.
+
+### 2.5 `SumTransactionsByCategoryUseCaseTest` (3 testes) 🆕 *(Nova Tool)*
+18. **Sucesso com valores — `deveSomarTransacoesPorCategoriaERetornarOutputFormatado`:**
+    - Mock: `transactionRepository.sumAmountByCategory(Category.GROCERIES)` retornando `12550L` (125 reais e 50 centavos).
+    - Ação: chama `execute(Category.GROCERIES)`.
+    - Asserções agrupadas (`assertAll`):
+      - Categoria informada: `"GROCERIES"`
+      - Total em `BigDecimal`: `125.50` com escala 2 e arredondamento `HALF_UP` (`assertEquals(new BigDecimal("125.50"), result.total())`)
+    - Verificação: `verify(transactionRepository, times(1)).sumAmountByCategory(Category.GROCERIES)`.
+19. **Sucesso sem transações (Zero) — `deveRetornarZeroQuandoCategoriaNaoTiverTransacoes`:**
+    - Mock: `transactionRepository.sumAmountByCategory(Category.PHARMA)` retornando `0L`.
+    - Ação: chama `execute(Category.PHARMA)`.
+    - Asserções:
+      - Categoria: `"PHARMA"`
+      - Total em `BigDecimal`: `0.00` (`assertEquals(new BigDecimal("0.00"), result.total())`).
+    - Verificação: `verify(transactionRepository, times(1)).sumAmountByCategory(Category.PHARMA)`.
+20. **Erro — `devePropagarExcecaoQuandoRepositorioFalhar`:**
+    - Mock: `transactionRepository.sumAmountByCategory(any(Category.class))` lança `RuntimeException("Erro de banco")`.
+    - Asserção: `assertThrows(RuntimeException.class, () -> useCase.execute(Category.AUTO))`.
 
 ---
 
 ## 📦 Etapa 3: Testes dos Adaptadores de Persistência
 
-**Foco:** Mapeamento bidirecional e isolamento das chamadas com Mockito puro.  
+**Foco:** Mapeamento bidirecional, agregação JPQL via adapter e isolamento das chamadas com Mockito puro.  
 **Commit sugerido:** `test(infrastructure): add unit tests for TransactionEntity and JpaTransactionRepository`
 
 ### 3.1 `TransactionEntityTest` (1 teste)
-16. **`deveGarantirMapeamentoBidirecionalEntreDominioEEntity`:**
+21. **`deveGarantirMapeamentoBidirecionalEntreDominioEEntity`:**
     - Cria `Transaction` → converte via `TransactionEntity.from(...)` → reconverte via `entity.toDomain()`.
     - Valida que `id`, `description`, `amount` e `category` permanecem idênticos em todo o ciclo.
 
-### 3.2 `JpaTransactionRepositoryTest` (3 testes)
-17. **`deveSalvarTransacaoMapeandoParaEntity`:**
+### 3.2 `JpaTransactionRepositoryTest` (5 testes — incluindo suporte à nova tool)
+22. **`deveSalvarTransacaoMapeandoParaEntity`:**
     - Mock: `TransactionEntityRepository.save(any(TransactionEntity.class))` devolve entity persistida.
     - Asserções agrupadas: captura entity, valida atributos mapeados e confere a `Transaction` de domínio retornada.
-18. **`deveBuscarTodasPorCategoriaEReconverterParaDominio`:**
+23. **`deveBuscarTodasPorCategoriaEReconverterParaDominio`:**
     - Mock: `transactionEntityRepository.findAllByCategory(Category.AUTO)` devolve entities.
-    - Ação: chama `jpaTransactionRepository.findALlByCategory(Category.AUTO)`. Valida lista de domínio reconvertida.
-19. **`devePropagarExcecaoQuandoEntityRepositoryFalhar`:**
+    - Ação: chama `jpaTransactionRepository.findAllByCategory(Category.AUTO)`. Valida lista de domínio reconvertida.
+24. **`devePropagarExcecaoQuandoEntityRepositoryFalhar`:**
     - Mock: repositório lança exceção. Valida propagação com `assertThrows`.
+25. **`deveSomarValorPorCategoriaComSucesso` 🆕:**
+    - Mock: `transactionEntityRepository.sumAmountByCategory(Category.GROCERIES)` devolve `7500L`.
+    - Ação: `long total = jpaTransactionRepository.sumAmountByCategory(Category.GROCERIES)`.
+    - Asserção: `assertEquals(7500L, total)` e verificação de chamada.
+26. **`deveRetornarZeroQuandoSumAmountByCategoryRetornarNull` 🆕:**
+    - Mock: `transactionEntityRepository.sumAmountByCategory(Category.PHARMA)` devolve `null` (comportamento nativo do SQL/JPQL `SUM()` quando não há linhas).
+    - Ação: `long total = jpaTransactionRepository.sumAmountByCategory(Category.PHARMA)`.
+    - Asserção: `assertEquals(0L, total)` validando a proteção contra `NullPointerException`.
 
 ---
 
 ## 📦 Etapa 4: Testes do Controller HTTP (MockMvc Standalone)
 
-**Foco:** Testar rotas, contratos HTTP, códigos de status (inclusive 400 Bad Request para enums inválidos) e headers sem subir contexto Spring.  
+**Foco:** Testar rotas, contratos HTTP, injeção de tools no ChatClient, códigos de status (inclusive 400 Bad Request para enums inválidos) e headers sem subir contexto Spring.  
 **Commit sugerido:** `test(http): add standalone MockMvc tests for TransactionController`
 
-### Inspeção Real do Código de Produção ([TransactionController.java](file:///c:/Users/gabri/IdeaProjects/Budgeting/src/main/java/br/com/ItauDIO/Budgeting/infrastructure/http/TransactionController.java)):
+### Inspeção Real do Código de Produção ([TransactionController.java](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/main/java/br/com/ItauDIO/Budgeting/infrastructure/http/TransactionController.java)):
 - Construtor executa:
-  `this.chatClient = chatClientBuilder.defaultSystem(systemPrompt.getContentAsString(...)).defaultTools(persistTransactionUseCase, listTransactionsByCategoryUseCase).build();`
-  -> `defaultTools` recebe varargs `Object... tools` (2 argumentos no código: `persistTransactionUseCase`, `listTransactionsByCategoryUseCase`).
+  `this.chatClient = chatClientBuilder.defaultSystem(systemPrompt.getContentAsString(...)).defaultTools(persistTransactionUseCase, listTransactionsByCategoryUseCase, sumTransactionsByCategoryUseCase).build();`
+  -> `defaultTools` recebe varargs `Object... tools` (3 use cases registrados como tools).
 - Método `/ai` executa:
   `String text = transcribeAudioUseCase.transcribe(file.getResource());`
   `var result = chatClient.prompt().user(text).call().content();`
@@ -170,6 +199,7 @@ class TransactionControllerTest {
     @Mock private PersistTransactionUseCase persistTransactionUseCase;
     @Mock private ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase;
     @Mock private TranscribeAudioUseCase transcribeAudioUseCase;
+    @Mock private SumTransactionsByCategoryUseCase sumTransactionsByCategoryUseCase;
     @Mock private SpeechSynthesizerUseCase speechSynthesizerUseCase;
 
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
@@ -183,12 +213,13 @@ class TransactionControllerTest {
     @BeforeEach
     void setUp() throws IOException {
         when(systemPromptResource.getContentAsString(any(Charset.class))).thenReturn("Prompt Mock");
-        when(chatClientBuilder.defaultSystem(anyString()).defaultTools(any(), any()).build()).thenReturn(chatClient);
+        when(chatClientBuilder.defaultSystem(anyString()).defaultTools(any(), any(), any()).build()).thenReturn(chatClient);
 
         TransactionController controller = new TransactionController(
                 persistTransactionUseCase,
                 listTransactionsByCategoryUseCase,
                 transcribeAudioUseCase,
+                sumTransactionsByCategoryUseCase,
                 systemPromptResource,
                 chatClientBuilder,
                 speechSynthesizerUseCase
@@ -200,19 +231,19 @@ class TransactionControllerTest {
 ```
 
 ### Casos de Teste (4 testes):
-20. **`deveCriarTransacaoERetornar201Created`:**
+27. **`deveCriarTransacaoERetornar201Created`:**
     - `POST /transactions` com JSON `{"description":"Lanche","category":"GROCERIES","amount":3500}`.
-    - Mock: `persistTransactionUseCase.execute(any())` -> `new TransactionOutput("uuid-1", "Lanche", "GROCERIES", 35.0)`.
+    - Mock: `persistTransactionUseCase.execute(any())` -> `new TransactionOutput("uuid-123", "Lanche", "GROCERIES", new BigDecimal("35.00"))`.
     - Asserções: `status().isCreated()`, JSON fields `id`, `description`, `category`, `amount`.
-21. **`deveListarTransacoesPorCategoriaERetornar200Ok`:**
+28. **`deveListarTransacoesPorCategoriaERetornar200Ok`:**
     - `GET /transactions/GROCERIES`.
     - Mock: `listTransactionsByCategoryUseCase.execute(Category.GROCERIES)` -> lista populada.
     - Asserções: `status().isOk()`, JSON array populado.
-22. **`deveRetornar400BadRequestQuandoCategoriaForInvalida`:**
+29. **`deveRetornar400BadRequestQuandoCategoriaForInvalida`:**
     - `GET /transactions/CATEGORIA_INEXISTENTE`.
     - Asserções: `status().isBadRequest()` (validação de binding do Spring MVC na conversão do enum do path variable).
-23. **`deveProcessarAudioComIAERetornarAudioWav`:**
-    - `POST /transactions/ai` com `MockMultipartFile("file", "teste.wav", "audio/wav", new byte[]{1, 2, 3})`.
+30. **`deveProcessarAudioComIAERetornarAudioWav`:**
+    - `POST /transactions/ai` com `MockMultipartFile("file", "gravacao.wav", "audio/wav", new byte[]{1, 2, 3})`.
     - Mocking profundo com stubs:
       - `transcribeAudioUseCase.transcribe(any())` -> `"Gastei 50"`
       - `chatClient.prompt().user("Gastei 50").call().content()` -> `"Despesa anotada"`
@@ -225,18 +256,21 @@ class TransactionControllerTest {
 
 | Etapa | Classes de Teste | Qtd Testes | Foco |
 |---|---|---|---|
-| **Etapa 1** | `TransactionIdTest`<br>`TransactionTest` | 2<br>4 | Value Object & Domínio (total: 6) |
-| **Etapa 2** | `PersistTransactionUseCaseTest`<br>`ListTransactionsByCategoryUseCaseTest`<br>`TranscribeAudioUseCaseTest`<br>`SpeechSynthesizerUseCaseTest` | 2<br>3<br>2<br>2 | Regras de aplicação, mocks de stubs e cenários de exceção (total: 9) |
-| **Etapa 3** | `TransactionEntityTest`<br>`JpaTransactionRepositoryTest` | 1<br>3 | Conversão de entity e delegação JPA (total: 4) |
-| **Etapa 4** | `TransactionControllerTest` | 4 | MockMvc standalone, 201/200/400, multipart e audio/wav (total: 4) |
-| **Total Geral** | **7 classes** | **23 testes** | **100% unitários, sem mocks vazios e sem duplicações** |
+| **Etapa 1** | `TransactionIdTest`<br>`TransactionTest` | 3<br>5 | Value Object & Domínio (total: 8) |
+| **Etapa 2** | `PersistTransactionUseCaseTest`<br>`ListTransactionsByCategoryUseCaseTest`<br>`TranscribeAudioUseCaseTest`<br>`SpeechSynthesizerUseCaseTest`<br>`SumTransactionsByCategoryUseCaseTest` 🆕 | 2<br>3<br>2<br>2<br>3 | Regras de aplicação, mocks de stubs, exceções e nova tool `@Tool` de soma (total: 12) |
+| **Etapa 3** | `TransactionEntityTest`<br>`JpaTransactionRepositoryTest` | 1<br>5 | Conversão de entity, delegação JPA e null safety do `SUM()` SQL (total: 6) |
+| **Etapa 4** | `TransactionControllerTest` | 4 | MockMvc standalone, injeção das 3 tools no ChatClient, 201/200/400 e multipart audio (total: 4) |
+| **Total Geral** | **8 classes** | **30 testes** | **100% unitários, sem mocks vazios e sem duplicações** |
 
 ---
 
 ## ✅ Critérios de Aceite da Tarefa
 
 - [ ] JaCoCo configurado no `pom.xml` para medição.
-- [ ] Todas as 4 etapas implementadas e compilando com `./mvnw test-compile`.
-- [ ] Execução de `./mvnw test` completando com **23 testes passando e 0 falhas**.
+- [ ] Todas as etapas implementadas e compilando com `./mvnw test-compile`.
+- [ ] Implementação de `SumTransactionsByCategoryUseCaseTest` com 3 cenários (cálculo em reais, retorno zerado quando vazio e propagação de erro).
+- [ ] Atualização de `JpaTransactionRepositoryTest` para cobrir o método `sumAmountByCategory` (inclusive retorno `null` do banco virando `0L`).
+- [ ] Execução de `./mvnw test` completando com **30 testes passando e 0 falhas**.
 - [ ] Relatório JaCoCo gerado com sucesso em `target/site/jacoco/index.html`.
 - [ ] **0 alterações realizadas no código de produção em `src/main`**.
+
