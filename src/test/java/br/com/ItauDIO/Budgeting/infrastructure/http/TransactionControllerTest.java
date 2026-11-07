@@ -66,7 +66,7 @@ class TransactionControllerTest {
     @BeforeEach
     void setUp() throws IOException {
         when(systemPromptResource.getContentAsString(any(Charset.class))).thenReturn("Prompt Mock");
-        when(chatClientBuilder.defaultSystem(anyString()).defaultTools(any(), any()).build()).thenReturn(chatClient);
+        when(chatClientBuilder.defaultSystem(anyString()).defaultTools(any(), any(), any()).build()).thenReturn(chatClient);
 
         TransactionController controller = new TransactionController(
                 persistTransactionUseCase,
