@@ -2,6 +2,7 @@ package br.com.ItauDIO.Budgeting.infrastructure.gemini;
 
 import br.com.ItauDIO.Budgeting.application.output.SpeechOutput;
 import br.com.ItauDIO.Budgeting.application.port.SpeechSynthesizer;
+import br.com.ItauDIO.Budgeting.infrastructure.exception.AIServiceException;
 import com.google.genai.Client;
 import com.google.genai.types.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,29 +27,35 @@ public class GeminiSpeechSynthesizer implements SpeechSynthesizer {
 
     @Override
     public SpeechOutput synthesize(String text) {
-        var config = GenerateContentConfig.builder()
-                .responseModalities(List.of("AUDIO"))
-                .speechConfig(SpeechConfig.builder()
-                        .voiceConfig(VoiceConfig.builder()
-                                .prebuiltVoiceConfig(PrebuiltVoiceConfig.builder()
-                                        .voiceName(voice)
-                                        .build())
-                                .build())
-                        .build())
-                .build();
+        try {
+            var config = GenerateContentConfig.builder()
+                    .responseModalities(List.of("AUDIO"))
+                    .speechConfig(SpeechConfig.builder()
+                            .voiceConfig(VoiceConfig.builder()
+                                    .prebuiltVoiceConfig(PrebuiltVoiceConfig.builder()
+                                            .voiceName(voice)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build();
 
-        GenerateContentResponse response = genAiClient.models.generateContent(model, text, config);
+            GenerateContentResponse response = genAiClient.models.generateContent(model, text, config);
 
-        var blob = response.candidates()
-                .flatMap(c -> c.stream().findFirst())
-                .flatMap(Candidate::content)
-                .flatMap(Content::parts)
-                .flatMap(p -> p.stream().findFirst())
-                .flatMap(Part::inlineData)
-                .orElseThrow(() -> new IllegalArgumentException("O gemini não devolveu áudio."));
+            var blob = response.candidates()
+                    .flatMap(c -> c.stream().findFirst())
+                    .flatMap(Candidate::content)
+                    .flatMap(Content::parts)
+                    .flatMap(p -> p.stream().findFirst())
+                    .flatMap(Part::inlineData)
+                    .orElseThrow(() -> new AIServiceException("O gemini não devolveu áudio."));
 
-        byte[] audio = blob.data().orElseThrow(() -> new IllegalArgumentException("O áudio veio vazio."));
+            byte[] audio = blob.data().orElseThrow(() -> new AIServiceException("O áudio veio vazio."));
 
-        return new SpeechOutput(audio, blob.mimeType().orElse("audio/wav"));
+            return new SpeechOutput(audio, blob.mimeType().orElse("audio/wav"));
+        } catch (AIServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AIServiceException("Falha ao sintetizar fala via Gemini.", e);
+        }
     }
 }

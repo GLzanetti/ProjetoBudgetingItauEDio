@@ -1,6 +1,8 @@
 package br.com.ItauDIO.Budgeting.infrastructure.gemini;
 
 import br.com.ItauDIO.Budgeting.application.port.AudioTranscriber;
+import br.com.ItauDIO.Budgeting.infrastructure.exception.AIServiceException;
+import br.com.ItauDIO.Budgeting.infrastructure.exception.AudioProcessingException;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.content.Media;
@@ -26,13 +28,23 @@ public class GeminiAudioTranscriber implements AudioTranscriber {
     @Override
     public String transcribe(Resource audio) {
         MimeType mimeType = MediaTypeFactory.getMediaType(audio)
-                .orElseThrow(() -> new IllegalArgumentException("Formato de audio não reconhecido: " + audio.getFilename()));
+                .orElseThrow(() -> new AudioProcessingException("Formato de audio não reconhecido: " + audio.getFilename()));
 
-        var userMessage = UserMessage.builder().text(prompt).media(List.of(new Media(mimeType, audio))).build();
+        try {
+            var userMessage = UserMessage.builder().text(prompt).media(List.of(new Media(mimeType, audio))).build();
 
-        var response = genAiChatModel.call(new Prompt(List.of(userMessage)));
-        String text = response.getResult().getOutput().getText();
+            var response = genAiChatModel.call(new Prompt(List.of(userMessage)));
+            String text = response.getResult().getOutput().getText();
 
-        return text;
+            if (text == null || text.isBlank()) {
+                throw new AudioProcessingException("A transcrição do áudio retornou vazia.");
+            }
+
+            return text;
+        } catch (AudioProcessingException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AIServiceException("Falha ao transcrever áudio via Gemini.", e);
+        }
     }
 }
