@@ -56,9 +56,13 @@ Não há nenhuma validação em nenhuma camada:
 - Definir exceções de domínio (`TransactionNotFoundException`, `InvalidCategoryException`, `AIServiceUnavailableException`).
 - Retornar respostas padronizadas com `ProblemDetail` (RFC 7807, nativo do Spring Boot 4).
 
-### 4. Healthcheck do Docker Compose inconsistente
+### 4. ~~Healthcheck do Docker Compose inconsistente~~ ✅ RESOLVIDO
 
-O healthcheck usa `-uapp -papp`, mas as credenciais reais vêm do `.env` (`budget_user` / `budget_password`). Se o `.env` estiver correto, o healthcheck **sempre falha**.
+> [!NOTE]
+> **Estado anterior:** O healthcheck usava credenciais hardcoded `-uapp -papp`, enquanto a senha configurada no `.env` era `app123`, resultando em falhas contínuas no healthcheck.
+>
+> **O que foi implementado:** O comando no [compose.yml](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/compose.yml) agora utiliza variáveis dinâmicas alinhadas ao `.env`:
+> `test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]`.
 
 ---
 
@@ -186,7 +190,7 @@ flowchart LR
         A1["✅ Testes automatizados"]
         A2["Validação de entrada"]
         A3["Tratamento de erros"]
-        A4["Fix healthcheck Docker"]
+        A4["✅ Fix healthcheck Docker"]
     end
 
     subgraph MEDIA["🟡 Média Prioridade"]
@@ -347,8 +351,9 @@ Foram adicionadas dependências de teste específicas:
 
 ```mermaid
 flowchart TD
-    subgraph RESOLVIDOS["✅ Resolvidos (7 pontos)"]
+    subgraph RESOLVIDOS["✅ Resolvidos (8 pontos)"]
         R1["#1 Testes automatizados"]
+        R4["#4 Healthcheck Docker"]
         R8["#8 System prompt melhorado"]
         R10["#10 Multi-formato áudio"]
         R20["#20 Typo findAllByCategory"]
@@ -362,10 +367,9 @@ flowchart TD
         P22["#22 ChatClient duplicado\n(bean + controller)"]
     end
 
-    subgraph PENDENTES["❌ Pendentes (9 pontos)"]
+    subgraph PENDENTES["❌ Pendentes (8 pontos)"]
         X2["#2 Validação de entrada"]
         X3["#3 Tratamento de erros"]
-        X4["#4 Healthcheck Docker"]
         X5["#5 Enriquecer domínio"]
         X6["#6 Expandir categorias"]
         X7["#7 Filtro por data"]
