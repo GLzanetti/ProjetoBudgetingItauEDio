@@ -1,6 +1,8 @@
 package br.com.ItauDIO.Budgeting.infrastructure.http;
 
-import br.com.ItauDIO.Budgeting.application.*;
+import br.com.ItauDIO.Budgeting.application.ListTransactionsByCategoryUseCase;
+import br.com.ItauDIO.Budgeting.application.PersistTransactionUseCase;
+import br.com.ItauDIO.Budgeting.application.ProcessVoiceCommandUseCase;
 import br.com.ItauDIO.Budgeting.application.input.PersistTransactionInput;
 import br.com.ItauDIO.Budgeting.domain.exception.InvalidTransactionException;
 import br.com.ItauDIO.Budgeting.infrastructure.exception.AIServiceException;
@@ -9,21 +11,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -43,36 +38,14 @@ class TransactionControllerErrorHandlingTest {
     private ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase;
 
     @Mock
-    private TranscribeAudioUseCase transcribeAudioUseCase;
-
-    @Mock
-    private SumTransactionsByCategoryUseCase sumTransactionsByCategoryUseCase;
-
-    @Mock
-    private SpeechSynthesizerUseCase speechSynthesizerUseCase;
-
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    private ChatClient.Builder chatClientBuilder;
-
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    private ChatClient chatClient;
-
-    @Mock
-    private Resource systemPromptResource;
+    private ProcessVoiceCommandUseCase processVoiceCommandUseCase;
 
     @BeforeEach
-    void setUp() throws IOException {
-        when(systemPromptResource.getContentAsString(any(Charset.class))).thenReturn("Prompt Mock");
-        when(chatClientBuilder.defaultSystem(anyString()).defaultTools(any(), any(), any()).build()).thenReturn(chatClient);
-
+    void setUp() {
         TransactionController controller = new TransactionController(
                 persistTransactionUseCase,
                 listTransactionsByCategoryUseCase,
-                transcribeAudioUseCase,
-                sumTransactionsByCategoryUseCase,
-                systemPromptResource,
-                chatClientBuilder,
-                speechSynthesizerUseCase
+                processVoiceCommandUseCase
         );
 
         this.mockMvc = MockMvcBuilders.standaloneSetup(controller)
@@ -137,7 +110,7 @@ class TransactionControllerErrorHandlingTest {
                 new byte[]{1, 2, 3}
         );
 
-        when(transcribeAudioUseCase.transcribe(any()))
+        when(processVoiceCommandUseCase.execute(any()))
                 .thenThrow(new AudioProcessingException("Formato de áudio não suportado"));
 
         mockMvc.perform(multipart("/transactions/ai").file(audioFile))
@@ -158,8 +131,7 @@ class TransactionControllerErrorHandlingTest {
                 new byte[]{1, 2, 3}
         );
 
-        when(transcribeAudioUseCase.transcribe(any())).thenReturn("Texto teste");
-        when(chatClient.prompt().user("Texto teste").call().content())
+        when(processVoiceCommandUseCase.execute(any()))
                 .thenThrow(new AIServiceException("Gemini fora do ar temporariamente"));
 
         mockMvc.perform(multipart("/transactions/ai").file(audioFile))
@@ -194,4 +166,3 @@ class TransactionControllerErrorHandlingTest {
                 .andExpect(jsonPath("$.status").value(500));
     }
 }
-

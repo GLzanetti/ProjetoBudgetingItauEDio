@@ -118,11 +118,16 @@ O endpoint `GET /transactions/{category}` retorna **tudo** de uma categoria, sem
 > - Instruir sobre como lidar com dados faltantes (ex: "gastei no mercado" sem valor)
 > - Instruir para pedir confirmação quando houver ambiguidade
 
-### 9. Separar a orquestração de IA do Controller
+### 9. ~~Separar a orquestração de IA do Controller~~ ✅ RESOLVIDO
 
-O `TransactionController.transcribe()` faz **transcrição + prompt IA + síntese de voz** tudo inline. Isso viola o SRP e a própria arquitetura hexagonal do projeto.
-
-**Sugestão:** criar um `ProcessVoiceCommandUseCase` que orquestre todo o fluxo, deixando o controller apenas delegar.
+> [!NOTE]
+> **Estado anterior:** O `TransactionController.transcribe()` fazia transcrição + prompt IA + síntese de voz inline, além de construir seu próprio `ChatClient`.
+>
+> **O que foi implementado:**
+> - Criado [`ProcessVoiceCommandUseCase`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/main/java/br/com/ItauDIO/Budgeting/application/ProcessVoiceCommandUseCase.java) para orquestrar o fluxo completo (STT → `ChatClient` → TTS).
+> - Configuração do `@Bean ChatClient` centralizada em [`BudgetingApplication`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/main/java/br/com/ItauDIO/Budgeting/BudgetingApplication.java) com `system-message.st` e as 3 tools.
+> - [`TransactionController`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/main/java/br/com/ItauDIO/Budgeting/infrastructure/http/TransactionController.java) simplificado, apenas delegando para `ProcessVoiceCommandUseCase`.
+> - Adicionado [`ProcessVoiceCommandUseCaseTest`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/test/java/br/com/ItauDIO/Budgeting/application/ProcessVoiceCommandUseCaseTest.java) e atualizados `TransactionControllerTest` e `TransactionControllerErrorHandlingTest`.
 
 ### 10. ~~Adicionar suporte a mais formatos de áudio~~ ✅ RESOLVIDO
 
