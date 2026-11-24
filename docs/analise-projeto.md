@@ -43,18 +43,23 @@ Não há nenhuma validação em nenhuma camada:
 - Adicionar `@Valid` + Bean Validation (`@NotBlank`, `@NotNull`, `@Positive`) nos DTOs de request.
 - Criar exceções de domínio próprias (`InvalidTransactionException`, etc.).
 
-### 3. Tratamento de erros inexistente
-
-- Não existe `@RestControllerAdvice` ou `@ExceptionHandler`.
-- Se o áudio vier corrompido, se o Gemini estiver fora, se a categoria for inválida no path... o usuário receberá stack traces crus.
+### 3. ~~Tratamento de erros inexistente~~ ✅ RESOLVIDO
 
 > [!NOTE]
-> O `GeminiSpeechSynthesizer` agora lança `IllegalArgumentException` com mensagens descritivas em vez de `RuntimeException` genérica — uma melhoria pontual, mas a aplicação ainda carece de tratamento global.
-
-**Sugestões:**
-- Criar um `GlobalExceptionHandler` com `@RestControllerAdvice`.
-- Definir exceções de domínio (`TransactionNotFoundException`, `InvalidCategoryException`, `AIServiceUnavailableException`).
-- Retornar respostas padronizadas com `ProblemDetail` (RFC 7807, nativo do Spring Boot 4).
+> **Estado anterior:** Não existia `@RestControllerAdvice` ou `@ExceptionHandler`. Erros lançavam exceções genéricas ou causavam stack traces expostos ao cliente.
+>
+> **O que foi implementado:**
+> - **Exceções de Domínio:** [`InvalidTransactionException`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/main/java/br/com/ItauDIO/Budgeting/domain/exception/InvalidTransactionException.java), [`InvalidCategoryException`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/main/java/br/com/ItauDIO/Budgeting/domain/exception/InvalidCategoryException.java) e [`TransactionNotFoundException`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/main/java/br/com/ItauDIO/Budgeting/domain/exception/TransactionNotFoundException.java) no pacote `domain.exception` (puras, sem acoplamento com HTTP/framework).
+> - **Exceções de Infraestrutura:** [`AIServiceException`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/main/java/br/com/ItauDIO/Budgeting/infrastructure/exception/AIServiceException.java) e [`AudioProcessingException`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/main/java/br/com/ItauDIO/Budgeting/infrastructure/exception/AudioProcessingException.java) no pacote `infrastructure.exception`.
+> - **Global Exception Handler:** [`GlobalExceptionHandler`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/main/java/br/com/ItauDIO/Budgeting/infrastructure/http/GlobalExceptionHandler.java) com `@RestControllerAdvice` padronizando respostas via `ProblemDetail` (RFC 7807, nativo Spring Boot 4) mapeando códigos HTTP semânticos:
+>   - `400 Bad Request` para `InvalidTransactionException`, `InvalidCategoryException`, `MethodArgumentTypeMismatchException`, `HttpMessageNotReadableException` e `MethodArgumentNotValidException`
+>   - `404 Not Found` para `TransactionNotFoundException`
+>   - `413 Payload Too Large` para `MaxUploadSizeExceededException`
+>   - `422 Unprocessable Entity` para `AudioProcessingException`
+>   - `503 Service Unavailable` para `AIServiceException`
+>   - `500 Internal Server Error` (catch-all seguro, sem vazar stack trace)
+> - **Refatoração dos adaptadores Gemini:** [`GeminiAudioTranscriber`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/main/java/br/com/ItauDIO/Budgeting/infrastructure/gemini/GeminiAudioTranscriber.java) e [`GeminiSpeechSynthesizer`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/main/java/br/com/ItauDIO/Budgeting/infrastructure/gemini/GeminiSpeechSynthesizer.java) agora capturam falhas de serviço externo e encapsulam em `AIServiceException` ou `AudioProcessingException`.
+> - **Testes dedicados de erro:** Novas suítes [`GlobalExceptionHandlerTest`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/test/java/br/com/ItauDIO/Budgeting/infrastructure/http/GlobalExceptionHandlerTest.java) (10 testes unitários) e [`TransactionControllerErrorHandlingTest`](file:///c:/Users/gabri/IdeaProjects/ProjetoBudgetingItauEDio/src/test/java/br/com/ItauDIO/Budgeting/infrastructure/http/TransactionControllerErrorHandlingTest.java) (6 testes de integração MockMvc) cobrindo todos os cenários sem modificar testes prévios.
 
 ### 4. ~~Healthcheck do Docker Compose inconsistente~~ ✅ RESOLVIDO
 
@@ -189,7 +194,7 @@ flowchart LR
     subgraph ALTA["🔴 Alta Prioridade"]
         A1["✅ Testes automatizados"]
         A2["Validação de entrada"]
-        A3["Tratamento de erros"]
+        A3["✅ Tratamento de erros"]
         A4["✅ Fix healthcheck Docker"]
     end
 
@@ -351,8 +356,9 @@ Foram adicionadas dependências de teste específicas:
 
 ```mermaid
 flowchart TD
-    subgraph RESOLVIDOS["✅ Resolvidos (8 pontos)"]
+    subgraph RESOLVIDOS["✅ Resolvidos (9 pontos)"]
         R1["#1 Testes automatizados"]
+        R3["#3 Tratamento de erros"]
         R4["#4 Healthcheck Docker"]
         R8["#8 System prompt melhorado"]
         R10["#10 Multi-formato áudio"]
@@ -367,9 +373,8 @@ flowchart TD
         P22["#22 ChatClient duplicado\n(bean + controller)"]
     end
 
-    subgraph PENDENTES["❌ Pendentes (8 pontos)"]
+    subgraph PENDENTES["❌ Pendentes (7 pontos)"]
         X2["#2 Validação de entrada"]
-        X3["#3 Tratamento de erros"]
         X5["#5 Enriquecer domínio"]
         X6["#6 Expandir categorias"]
         X7["#7 Filtro por data"]
