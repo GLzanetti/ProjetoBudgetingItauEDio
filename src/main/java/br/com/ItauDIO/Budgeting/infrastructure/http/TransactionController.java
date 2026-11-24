@@ -1,20 +1,17 @@
 package br.com.ItauDIO.Budgeting.infrastructure.http;
 
-import br.com.ItauDIO.Budgeting.application.*;
+import br.com.ItauDIO.Budgeting.application.ListTransactionsByCategoryUseCase;
+import br.com.ItauDIO.Budgeting.application.PersistTransactionUseCase;
+import br.com.ItauDIO.Budgeting.application.ProcessVoiceCommandUseCase;
 import br.com.ItauDIO.Budgeting.domain.Category;
 import br.com.ItauDIO.Budgeting.infrastructure.http.request.TransactionRequest;
 import br.com.ItauDIO.Budgeting.infrastructure.http.response.TransactionResponse;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.List;
 
 @RestController
@@ -23,25 +20,14 @@ public class TransactionController {
 
     private final PersistTransactionUseCase persistTransactionUseCase;
     private final ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase;
-    private final TranscribeAudioUseCase transcribeAudioUseCase;
-    private final ChatClient chatClient;
-    private final SpeechSynthesizerUseCase speechSynthesizerUseCase;
+    private final ProcessVoiceCommandUseCase processVoiceCommandUseCase;
 
     public TransactionController(PersistTransactionUseCase persistTransactionUseCase,
                                  ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase,
-                                 TranscribeAudioUseCase transcribeAudioUseCase,
-                                 SumTransactionsByCategoryUseCase sumTransactionsByCategoryUseCase,
-                                 @Value("classpath:/prompts/system-message.st")Resource systemPrompt,
-                                 ChatClient.Builder chatClientBuilder,
-                                 SpeechSynthesizerUseCase speechSynthesizerUseCase) throws IOException {
+                                 ProcessVoiceCommandUseCase processVoiceCommandUseCase) {
         this.persistTransactionUseCase = persistTransactionUseCase;
         this.listTransactionsByCategoryUseCase = listTransactionsByCategoryUseCase;
-        this.transcribeAudioUseCase = transcribeAudioUseCase;
-        this.chatClient = chatClientBuilder
-                .defaultSystem(systemPrompt.getContentAsString(Charset.defaultCharset()))
-                .defaultTools(persistTransactionUseCase, listTransactionsByCategoryUseCase, sumTransactionsByCategoryUseCase)
-                .build();
-        this.speechSynthesizerUseCase = speechSynthesizerUseCase;
+        this.processVoiceCommandUseCase = processVoiceCommandUseCase;
     }
 
     @PostMapping
@@ -58,11 +44,7 @@ public class TransactionController {
 
     @PostMapping(value = "/ai", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = "audio/wav")
     public ResponseEntity<byte[]> transcribe(@RequestParam("file") MultipartFile file) {
-        String text = transcribeAudioUseCase.transcribe(file.getResource());
-
-        var result = chatClient.prompt().user(text).call().content();
-
-        byte[] audio = speechSynthesizerUseCase.synthesize(result);
+        byte[] audio = processVoiceCommandUseCase.execute(file.getResource());
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("audio/wav"))
