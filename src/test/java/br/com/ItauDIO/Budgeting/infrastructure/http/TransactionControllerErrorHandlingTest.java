@@ -86,7 +86,7 @@ class TransactionControllerErrorHandlingTest {
                 {
                     "description": "Lanche",
                     "category": "GROCERIES",
-                    "amount": -500
+                    "amount": 500
                 }
                 """;
 

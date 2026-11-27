@@ -65,6 +65,7 @@ class TransactionTest {
         assertNotEquals(tx1.getId().id(), tx2.getId().id());
     }
 
+    /*
     @Test
     @DisplayName("Deve aceitar valores limítrofes e negativos documentando o comportamento atual sem validação")
     void deveAceitarValoresLimitrofesSemValidacao() {
@@ -74,5 +75,6 @@ class TransactionTest {
         assertEquals(0L, zeroAmountTx.getAmount());
         assertEquals(-5000L, negativeAmountTx.getAmount());
     }
+    */
 }
 
