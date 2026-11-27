@@ -182,7 +182,7 @@ Atualmente cada interação com a IA é stateless. O assistente não lembra do q
 - Considerar Spring Boot Actuator para métricas e health endpoints.
 - Tracing distribuído com Micrometer para rastrear o fluxo STT → IA → TTS.
 
-### 17. Containerizar a aplicação
+### 17. ✅ Containerizar a aplicação
 
 O `compose.yml` só tem o MySQL. Adicionar a própria aplicação como serviço Docker com multi-stage build tornaria o deploy muito mais simples e portável.
 
