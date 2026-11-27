@@ -1,6 +1,7 @@
 package br.com.ItauDIO.Budgeting.application.input;
 
 import br.com.ItauDIO.Budgeting.domain.Category;
+import br.com.ItauDIO.Budgeting.domain.exception.InvalidTransactionException;
 import org.springframework.ai.tool.annotation.ToolParam;
 
 /**
@@ -15,4 +16,15 @@ public record PersistTransactionInput(
         @ToolParam(description = "Categoria de uma transação") Category category,
         @ToolParam(description = "Valor da transação obrigatoriamente em centavos inteiros (exemplo: 50 reais deve ser informado como 5000)") long amount
 ) {
+    public PersistTransactionInput {
+        if (description == null || description.isBlank()) {
+            throw new InvalidTransactionException("A descrição da transação não pode ser vazia.");
+        }
+        if (category == null) {
+            throw new InvalidTransactionException("A categoria da transação é obrigatória.");
+        }
+        if (amount <= 0) {
+            throw new InvalidTransactionException("O valor da transação deve ser maior que zero.");
+        }
+    }
 }

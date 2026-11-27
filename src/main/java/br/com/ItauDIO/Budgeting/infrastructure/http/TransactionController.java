@@ -6,6 +6,7 @@ import br.com.ItauDIO.Budgeting.application.ProcessVoiceCommandUseCase;
 import br.com.ItauDIO.Budgeting.domain.Category;
 import br.com.ItauDIO.Budgeting.infrastructure.http.request.TransactionRequest;
 import br.com.ItauDIO.Budgeting.infrastructure.http.response.TransactionResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +33,7 @@ public class TransactionController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TransactionResponse createTransaction(@RequestBody TransactionRequest request){
+    public TransactionResponse createTransaction(@Valid @RequestBody TransactionRequest request){
         var transaction = persistTransactionUseCase.execute(request.toInput());
         return TransactionResponse.from(transaction);
     }
